@@ -1,6 +1,8 @@
+import json
+
 fail = 0
 quit = 0
-file_name = "Week 5/inventory.txt"
+file_name = "Week 5/inventory.json"
 history = []
 
 def get_valid_input(quantity):
@@ -38,6 +40,13 @@ def generate_report(inventory, fail):
     print("Total Unit Processed:", inventory)
     print("Number of Failed/Rejected Entries:", fail)'''
 
+def get_next_id(history_list):
+    if len(history_list) > 0:
+        return history_list[-1]["id"] + 1
+    else:
+        return 1001
+
+#---- ALL DATA MANIPULATION FUNCTIONS -----
 #Data Manipulation - Replaced previously print_current_orders()
 def display_all(inventory):
     if not inventory:
@@ -49,40 +58,6 @@ def display_all(inventory):
         for item in inventory:
             print(f"{item['id']:<10}{item['name']:<20}{item['quantity']:<10}")
         print("-" * 40)
-
-def persistence(file_name):
-    try:
-        with open(file_name, "r") as f:
-            inventory = f.read()
-            return inventory
-    except FileNotFoundError:
-        inventory = ""
-        return inventory
-
-def history_tracking(inventory_data):
-    parsed_history = []
-    if inventory_data != "":
-        for line in inventory_data.splitlines():
-            line = line.strip()
-            if line != "":
-                parts = line.split(",")
-                item_id = int(parts[0].strip())
-                name = parts[1].strip()
-                quantity = int(parts[2].strip())
-
-                product_dict = {
-                    "id": item_id,
-                    "name": name,
-                    "quantity": quantity
-                }
-                parsed_history.append(product_dict)
-    return parsed_history
-
-def get_next_id(history_list):
-    if len(history_list) > 0:
-        return history_list[-1]["id"] + 1
-    else:
-        return 1001
 
 #Data Manipulation - Replaced previously add_order()
 def add_product(inventory, product_name, quantity):
@@ -125,14 +100,31 @@ def search_product(inventory, search_term):
     else:
         print(f"No products found matching '{search_term}'.\n")
 
+#---- ALL DATA PERSISTENCE FUNCTIONS -----
+#Data Persistence - Replaced previously persistence() + history_tracking() + load_inventory()
 def load_inventory(file_name):
-    raw_data = persistence(file_name)
-    return history_tracking(raw_data)
-
+    try:
+        with open(file_name, "r") as f:
+            return json.load(f)  # Automatically parses JSON back into a list of dictionaries
+    except FileNotFoundError:
+        # Fallback default inventory if file doesn't exist
+        return [
+            {"id": 1001, "name": "Wireless Mouse", "quantity": 2},
+            {"id": 1002, "name": "Keyboard", "quantity": 1},
+            {"id": 1003, "name": "USB Cable", "quantity": 3}
+        ]
+    except json.JSONDecodeError:
+        # Handles case if file exists but is empty/corrupted
+        return []
+    
+#Data Persistence - Replaced previously save_inventory()
 def save_inventory(file_name, history_list):
-    with open(file_name, "w") as f:
-        for item in history_list:
-            f.write(f"{item['id']}, {item['name']}, {item['quantity']}\n")
+    try:
+        with open(file_name, "w") as f:
+            json.dump(history_list, f, indent=4)
+        print(f"All orders successfully saved to {file_name}\n")
+    except Exception as e:
+        print(f"Error saving file: {e}\n")
 
 print("Current Orders:\n")
 history = load_inventory(file_name)
